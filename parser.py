@@ -249,9 +249,6 @@ class NTE():
     def get_text(self):
         return '\n'.join([seg.comment.hl7 for seg in self._segments])
 
-
-
-
 class Segment(object):
     """
     A segment is a line delimited by Carriage Return per HL7 specs. They begin with three
@@ -267,16 +264,31 @@ class Segment(object):
 
     """
 
-    def __init__(self, raw_text = '', delims=delims, strict=False, **kwargs):
+    def __init__(self, raw_text = '',code = '', delims=delims, strict=False, data = {}):
+        '''
+        A Segment can be constructed in two ways:
+
+        1. Pass valid HL7 text with the argument raw_text. Ths will parse the message
+         using the delimiters determined within the message. The segment's structure
+         will be looked up by using the first three non-control characters of the message.
+
+        2. Pass the three letter segment code (e.g. MSH, PID, OBX) along with a dictionary
+         of data whose attributes match all or a subset of nodes in the segment structure.
+
+         The segment structure can be found in the HL7Fields.py file.
+        '''
+
         if not strict:
             self._raw_text = raw_text.strip()
         else:
             self._raw_text = raw_text
-
-
         self.code = self._raw_text.split(delims[0])[0]
+
+        #Determine if we are creating this segment from HL7 text or from a dictionary.
+        if not self._raw_text:
+            self.code = code
         if not self.code:
-            self.code = kwargs.get('code')
+            raise ValueError("Unable to find code in specified message.")
         self.child_segments = []
         self.parent_seg = None
         self.node = None
@@ -286,9 +298,17 @@ class Segment(object):
 
         if self.code not in hl7fieldspec:
             raise Exception("Message code not in specification: '%s'" % (self.code,))
+
         self.node = Node(**hl7fieldspec.get(self.code))
         if raw_text == '':
-            self.data = kwargs
+            data_code = data.get('code')
+            if self.code and \
+               data_code and \
+               self.code != data_code:
+                raise ValueError("'code' attribute in data does not match "
+                                 "'code' attribute in segment.")
+            data.update({'code':self.code})
+            self.data = data
         else:
             delim_idx = 0
             self.node.set_from_str(raw_text, delims, delim_idx)
@@ -315,7 +335,10 @@ class Segment(object):
         """
 
         #this segment is always before its children.
-        result = [self.node.hl7]
+        if self.node:
+            result = [self.node.hl7]
+        else:
+            result = []
         for child in self.child_segments:
             result += child._get_recursive_hl7_list()
         return result
@@ -389,6 +412,9 @@ class Segment(object):
 
         # if there is no child segment of this code name, try going into the node which
         # contains the actual data of the segment.
+        #if self.node:
+        if attr_name == 'hl7':
+            return self.get_as_str()
         return self.node.__getattribute__(attr_name)
 
 
@@ -398,10 +424,7 @@ class MultiMessage(object):
     abstracts out the parsing of MSH|(or whatever the field delimiter happens to be).
     """
     def __init__(self,string):
-
-
         substrings = re_MSH_split.split(string)
-
         self.messages = []
         for i,substr in enumerate(substrings):
             if substr.strip() == '':
@@ -412,8 +435,11 @@ class Message(object):
     """
     Message keeps track of the root Segment of the Segment/Node tree.
     """
-    def __init__(self,base,raw_text):
-        self._base = base
+    def __init__(self,base = None,raw_text=''):
+        if not base:
+            self._base = Segment('___|NONE')
+        else:
+            self._base = base
         self.raw_text = raw_text
 
     def __getattr__(self, item):
@@ -423,7 +449,13 @@ class Message(object):
         return self._base.MSH.msg_type.event_code.data
 
     def _message_code(self):
-        return self._base.MSH.msg_type.message_code.data
+        return self._base.MSH.msg_type.messa
+    def add_segment(self,seg):
+        self._base.child_segments.append(seg)
+
+    def add_segments(self,segments):
+        for seg in segments:
+            self.add_segment(seg)
 
 
 
