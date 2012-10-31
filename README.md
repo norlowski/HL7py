@@ -25,26 +25,17 @@ THE SOFTWARE.
 =====
 
 
-**WARNING! WARNING! WARNING!**
-
- Consider this software as *beta* software as it is not yet ready for production use!
- The tests included are only smoke tests to make sure fundamental things haven't broken!
- (A great way to contribute would be to help me make some unit tests.)
-
-**WARNING! WARNING! WARNING!**
-
 
 A parser for the HL7 Health data interchange format written in python. Provides
 attribute-like access to correct datatypes and provides the ability to construct HL7
 messages from dictionaries.
 
 The HL7 transport protocol is a confusing mess of pipes and carriage returns. This package
-provides easy Pythonic access to attributes within a message.There is much domain
+provides easy Pythonic access to attributes within a message. There is much domain
 knowledge of segments names and field names, but what follows are some basic examples of
 syntax and usage.
 
-IMPORTANT IMPORTANT! IMPORTANT!: This is currently just a _parser_. I will soon update
-this to be able to create HL7 messages, as well.
+
 
 Here is a sample message from http://www.coast2coastinformatics.com/user/ADTA08_examples-110106.pdf
  
@@ -113,16 +104,49 @@ are assembled into the .note attribute for a segment.
     
 The following would occur:
 
-
-
     print my_message.ORC.OBR.OBX_list[1].note
     'Results confirmed on dilution'
+
+=================MESSAGE CREATION EXAMPLES============
+Messages are created by assembling Segments and adding them to a Message.
+ Here is an example of how our EMR, Ankhos, constructs an ADT/A08 message.  The chart.to_dict()
+ method constructs a dictionary of the relevant fields from chart demographics, etc.
+
+    msg = Message()
+    msh_data= dict(
+            recv_app={'app_name': 'Their App'},
+            send_app={'app_name': 'ANKHOS'},
+            msg_type=dict(message_code='ADT',
+                          event_code='A08'),
+            accept_ack_type='AL',
+            application_ack_type='AL',
+            proc_id='P',
+            version='2.3',
+            msg_ctl_id=control_id,
+            encoding_chars='^~\&',
+            timestamp=datetime.datetime.now())
+    MSH = Segment(code='MSH',data=msh_data)
+    evn_data = dict(event_code=event_code,timestamp=dict(time=datetime.datetime.now(),
+                                                          resolution='S'))
+    EVN = Segment(code='EVN',data=evn_data)
+    PID = Segment(code='PID',data=chart.to_dict())
+    pv1_data = {...}
+    PV1 = Segment(code='PV1',data=pv1_data)
+    msg.add_segments([MSH,EVN,PID,PV1])
+
+    #Voila!
+    print msg.hl7
+
+
+As long as the data dictionaries follow the signatures in the HL7fields.py specification,
+the Segments should be constructed correctly.  There are a LOT of HL7 specified segments
+but only a few in the include HL7fields.py file. We simply haven't had a use for most of them
+yet but if we do, I will be sure to update the HL7fields specification dictionary.
 
 
 Current limitations:
  1. The ADD operation is not supported. (very low priority)
  2. Intra-field repetition is not yet supported
- 3. Data attributes can be updated, but total message creation is not yet supported.
- 4. The tests included are only smoke tests to make sure fundamental things haven't broken!
+ 3. The tests included are only smoke tests to make sure fundamental things haven't broken!
    HL7 is used in life-critical systems. Again. Please Please Please test your own software!
    More real tests will be added when time allows.
