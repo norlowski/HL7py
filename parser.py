@@ -353,8 +353,7 @@ class Segment(object):
             return ''
         elif len(hl7_list) == 1:
             return hl7_list[0]
-        return LF.join(hl7_list)
-
+        return CR.join(hl7_list)
 
     def __repr__(self):
         return self.code
