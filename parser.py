@@ -413,7 +413,8 @@ class Segment(object):
         # contains the actual data of the segment.
         #if self.node:
         if attr_name == 'hl7':
-            return self.get_as_str()
+
+            return VT + self.get_as_str() + FS + CR
         return self.node.__getattribute__(attr_name)
 
 
