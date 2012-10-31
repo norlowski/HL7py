@@ -38,7 +38,7 @@ def rep_ch(s):
     editors which don't like to display \r much.  This also allows you to be explicit
     about which characters are where when debugging.
     """
-    return s.replace(FS,'<FS>').replace(VT,'<VT>').replace(LF,'<LF>'+LF).replace(CR,'<CR>'+CR)
+    return s.replace(FS,'<FS>').replace(VT,'<VT>').replace(LF,'<LF>'+LF).replace(CR,'<CR>'+LF)
 
 def reverse_rep_ch(s):
     """
