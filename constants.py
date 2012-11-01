@@ -34,7 +34,7 @@ MINUTE_TIME_FORMAT = '%Y%m%d%H%M'
 SECOND_TIME_FORMAT = '%Y%m%d%H%M%S'
 
 LEVELS =\
-{'BASE': 0, 'MSH': 1, 'PID': 1, 'ORC': 1, 'OBR': 2,
+{'BASE': 0, 'MSH': 1, 'PID': 1, 'ORC': 1, 'OBR': 2, 'MFI':1,'MFE':1,'STF':1,'PRA':1,
  'OBX': 3, 'ZPS': 1, 'PV1': 1, 'EVN': 1,'NTE':4,
  'IN1': 1, 'IN2': 1, 'PD1': 1, 'NK1': 1, 'ZBI': 1, 'GT1': 1}
 
