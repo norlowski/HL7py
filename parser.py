@@ -548,7 +548,4 @@ def get_delims(msh):
     delims = [msh[3], msh[4], msh[5], msh[6], msh[7]]
     #Make sure that the delimiters are unique.
     assert len(set(delims)) == len(delims)
-    return
-
-if __name__ == '__main__':
-    run()
+    return delims
