@@ -545,8 +545,10 @@ def parse(raw_text):
 
 
 def get_delims(msh):
-    #return {'field':msh[3],'component':msh[4],'subcomp':msh[5],'reptn':msh[6],'escape':msh[7]}
-    return [msh[3], msh[4], msh[5], msh[6], msh[7]]
+    delims = [msh[3], msh[4], msh[5], msh[6], msh[7]]
+    #Make sure that the delimiters are unique.
+    assert len(set(delims)) == len(delims)
+    return
 
 if __name__ == '__main__':
     run()
