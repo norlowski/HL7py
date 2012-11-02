@@ -140,7 +140,7 @@ class Node(object):
         Add a child node to this node and expose its code for attribute access.
         """
         self._child_nodes.append(node)
-        self.__dict__[node._code] = node
+        setattr(self,node._code,node)
 
     def set_from_str(self, s, delims=[], delim_idx=-1):
         """
