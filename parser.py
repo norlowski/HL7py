@@ -56,30 +56,37 @@ def _to_data(data_type, val):
     Attempt to coerce the value to the correct data type.
     """
     #TODO: Clean up time parsing.
+
+    if data_type.strip() == 'string':
+        return str(val)
     if not val:
         return None
     if data_type.strip() == 'timestamp':
         try:
             trial = datetime.datetime.strptime(val, constants.MINUTE_TIME_FORMAT)
             return trial
-        except Exception, e:
+        except ValueError, e:
             try:
                 trial = datetime.datetime.strptime(val, constants.SECOND_TIME_FORMAT)
                 return trial
-            except Exception,e2:
+            except ValueError,e2:
                 try:
                     trial = datetime.datetime.strptime(val, '%Y%m%d %H:%M:%S')
                     return trial
-                except Exception,e2:
+                except ValueError,e2:
                     return val
+        except TypeError:
+            return val
 
 
     elif data_type.strip() == 'date':
         try:
             trial = datetime.datetime.strptime(val, constants.DATE_TIME_FORMAT)
             return trial
-        except Exception, e:
+        except ValueError, e:
             return None
+        except TypeError:
+            return val
     elif data_type == 'number':
         try:
             return float(val)
