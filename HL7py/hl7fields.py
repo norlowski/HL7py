@@ -22,7 +22,17 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
 """
-hl7fields = {'EVN': {'subfields': [{'code': 'code', 'data_type': 'string'},
+#TODO: Split more segments out like this.
+#1 10 NM O 00079 File Batch Count
+#2 80 ST O 00080 File Trailer Comment
+#File transfer segment 2.15.7
+FTS =  {'subfields': [{'code': 'code', 'data_type': 'string'},
+                      {'code': 'file_batch_count', 'data_type': 'string'},
+                      {'code': 'trailer_comment', 'data_type': 'string'},]
+}
+
+hl7fields = {'FTS':FTS,
+             'EVN': {'subfields': [{'code': 'code', 'data_type': 'string'},
                                       {'code': 'event_code', 'data_type': 'string'},
                                       {'code': 'timestamp',
                                        'subfields': [{'code': 'time',
