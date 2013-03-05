@@ -5,7 +5,7 @@ def readme():
         return f.read()
 
 setup(name='HL7py',
-      version='1.0',
+      version='1.01',
       description='HL7 message parser',
       long_description=readme(),
       keywords='hl7 parsing ',
