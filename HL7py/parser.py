@@ -1,7 +1,7 @@
 """
 The MIT License
 
-Copyright (c) 2012 Nicholas Orlowski
+Copyright (c) 2016 Ankhos Clinical Oncology Software
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -310,8 +310,8 @@ class Segment(object):
         self.node = Node(**hl7fieldspec.get(self.code))
         if raw_text == '':
             data_code = data.get('code')
-            if self.code and \
-               data_code and \
+            if self.code and\
+               data_code and\
                self.code != data_code:
                 raise ValueError("'code' attribute in data does not match "
                                  "'code' attribute in segment.")
@@ -431,7 +431,10 @@ class MultiMessage(object):
     Parses a string that potentially has many Messages, separated by MSH. This class just
     abstracts out the parsing of MSH|(or whatever the field delimiter happens to be).
     """
-    def __init__(self,string):
+    def __init__(self,string, additional_fields = None):
+        #Add any custom fields to field parsing dict.
+        if additional_fields:
+            hl7fieldspec.update(additional_fields)
         substrings = re_MSH_split.split(string)
         self.messages = []
         for i,substr in enumerate(substrings):
@@ -467,7 +470,7 @@ class Message(object):
 
 
 
-def parse(raw_text):
+def parse(raw_text,custom_levels = None):
     """
     Because of the way the HL7 spec is non-hierarchical, parsing a message depends on
     order of lines and an implicit hierarchy in relation to the segment code types. For
@@ -478,6 +481,9 @@ def parse(raw_text):
     1.The lines in the message are in the correct order.
     2.The lines in the message adhere to the correct hierarchy (e.g. OBX is always after
      an OBR and ORC is always a base-level segment).
+     2016-07-29 This is not a good assumption - some vendors choose not to put in an ORC, for instance. In this case,
+     pass in a custom dictionary into 'custom_levels' that specifies {'OBR':1,'OBX':2} to let the parser know that
+     OBR is actually a first-level segement for the current message being parsed.
 
     As we iterate through lines in the message, we have a decision to make; do we
 
@@ -496,8 +502,14 @@ def parse(raw_text):
 
     #Some segments may have Line Feed instead of Carriage Return (CR is the standard though)
     lines = raw_text.split(CR)
+
     if FALL_BACK_TO_LF and len(lines) == 1:
         lines = raw_text.split(LF)
+
+    LEVELS_COPY = LEVELS.copy()#Don't overwite constants.LEVELS if we end up using custom levels.
+    if custom_levels is not None:
+        LEVELS_COPY.update(custom_levels)
+
 
     for line in lines:
         line = line.strip()
@@ -509,15 +521,19 @@ def parse(raw_text):
         if 'MSH' == line[0:3]:
             delims = get_delims(line) #Delimiters could be different for every message.
 
+
         new_seg = Segment(line, delims=delims)
         if 'NTE' == line[0:3]:
             last_seg.add_to_NTE(new_seg)
             continue #NTE is special case, it should not affect stack/tree traversal ever.
 
-        new_level = LEVELS.get(new_seg.code)
-        assert new_level, "Missing level for code '%s'" % (new_seg.code)
-        assert isinstance(new_level, int), "Invalid level for code '%s'. "\
-                                           "Value must be an int." % (new_seg.code)
+        new_level = LEVELS_COPY.get(new_seg.code)
+        if not new_seg.code.startswith('Z'):
+            assert new_level, "Missing level for code '%s'" % (new_seg.code)
+            assert isinstance(new_level, int), "Invalid level for code '%s'. "\
+                                               "Value must be an int." % (new_seg.code)
+        else:
+            new_level = 1
 
         #--Case 3--
         #Children are going home to live with ancestors. Set last_seg to the parent of the
@@ -531,7 +547,7 @@ def parse(raw_text):
 
             last_seg.parent_seg.add_child(new_seg)
             last_seg = new_seg
-            last_level = LEVELS.get(new_seg.code)
+            last_level = LEVELS_COPY.get(new_seg.code)
 
         #--Case 2--
         #New first child, need to increase our level indicator so that we know whether to
@@ -539,14 +555,14 @@ def parse(raw_text):
         elif new_level > last_level:
             last_seg.add_child(new_seg)
             last_seg = new_seg
-            last_level = LEVELS.get(last_seg.code)
+            last_level = LEVELS_COPY.get(last_seg.code)
 
         #--Case 1--
         #New sibling of last node, let the parent node know. This is analagous to an append.
         elif new_level == last_level:
             last_seg.parent_seg.add_child(new_seg)
             last_seg = new_seg
-            last_level = LEVELS.get(last_seg.code)
+            last_level = LEVELS_COPY.get(last_seg.code)
 
     return Message(base,raw_text)
 
